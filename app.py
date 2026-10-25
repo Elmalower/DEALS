@@ -1,12 +1,15 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import hashlib
+import hmac
+import base64
 
 app = Flask(__name__)
 
-# === CONFIGURACIÓN ===
-TELEGRAM_TOKEN = os.getenv("8970176039:AAF7-EkOr1iOZiMU6fROBgZY-VfNqy764kc")      # Ponlo en variables de entorno
-TELEGRAM_CHAT_ID = os.getenv("6863257643")  # Tu chat ID
+TELEGRAM_TOKEN = os.getenv("8970176039:AAF7-EkOr1iOZiMU6fROBgZY-VfNqy764kc")
+TELEGRAM_CHAT_ID = os.getenv("6863257643")
+CONSUMER_SECRET = os.getenv("Qr8x3FHnHLnqcPWwol3qq61XytzNjdW5jK0MrNa0Ynv5lbhXo5")  # Necesitarás agregar esto después
 
 KEYWORDS = [
     "cheap laptop", "budget laptop", "laptop deals", "laptop sale",
@@ -22,11 +25,23 @@ def contains_keyword(text):
     text_lower = text.lower()
     return any(kw.lower() in text_lower for kw in KEYWORDS)
 
-@app.route("/webhook", methods=["POST"])
+@app.route("/webhook", methods=["GET", "POST"])
 def webhook():
-    data = request.json
+    if request.method == "GET":
+        # CRC Challenge para validar el webhook
+        crc_token = request.args.get("crc_token")
+        if crc_token:
+            sha256_hash = hmac.new(
+                CONSUMER_SECRET.encode("utf-8"),
+                crc_token.encode("utf-8"),
+                hashlib.sha256
+            ).digest()
+            response_token = "sha256=" + base64.b64encode(sha256_hash).decode("utf-8")
+            return jsonify({"response_token": response_token})
+        return "OK", 200
 
-    # X Activity API envía el post en data["data"]
+    # POST - eventos de X
+    data = request.json
     if data and "data" in data:
         post = data["data"]
         text = post.get("text", "")
