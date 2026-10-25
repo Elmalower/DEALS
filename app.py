@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("8970176039:AAF7-EkOr1iOZiMU6fROBgZY-VfNqy764kc")
 TELEGRAM_CHAT_ID = os.getenv("6863257643")
-CONSUMER_SECRET = os.getenv("Qr8x3FHnHLnqcPWwol3qq61XytzNjdW5jK0MrNa0Ynv5lbhXo5")  # Necesitarás agregar esto después
+CONSUMER_SECRET = os.getenv("Qr8x3FHnHLnqcPWwol3qq61XytzNjdW5jK0MrNa0Ynv5lbhXo5")
 
 KEYWORDS = [
     "cheap laptop", "budget laptop", "laptop deals", "laptop sale",
@@ -28,9 +28,8 @@ def contains_keyword(text):
 @app.route("/webhook", methods=["GET", "POST"])
 def webhook():
     if request.method == "GET":
-        # CRC Challenge para validar el webhook
         crc_token = request.args.get("crc_token")
-        if crc_token:
+        if crc_token and CONSUMER_SECRET:
             sha256_hash = hmac.new(
                 CONSUMER_SECRET.encode("utf-8"),
                 crc_token.encode("utf-8"),
